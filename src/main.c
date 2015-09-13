@@ -5,7 +5,7 @@
 
 #define GPIO_PIN 29 /* Pin 40 / GPIO 21 */
 #define TRUE 1
-#define FALE 0
+#define FASLE 0
 #define ON TRUE
 #define OFF FALSE
 
@@ -13,7 +13,7 @@ void wiringpi_init() {
 	if (wiringPiSetup() == -1)
 		exit(EXIT_FAILURE);
 	
-	pinMode(PIN, OUTPUT);
+	pinMode(GPIO_PIN, OUTPUT);
 }
 
 void wiringpi_led_on() {
