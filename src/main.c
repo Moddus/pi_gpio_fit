@@ -5,7 +5,7 @@
 
 #define GPIO_PIN 29 /* Pin 40 / GPIO 21 */
 #define TRUE 1
-#define FASLE 0
+#define FALSE 0
 #define ON TRUE
 #define OFF FALSE
 
