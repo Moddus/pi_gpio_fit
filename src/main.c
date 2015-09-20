@@ -8,28 +8,109 @@
 #define FALSE 0
 #define ON TRUE
 #define OFF FALSE
-#define DELAY 100
+#define DELAY 250
+#define MAX_PROG_C 10
 
-void wiringpi_init() {
+void
+wiringpi_init() {
 	if (wiringPiSetup() == -1)
 		exit(EXIT_FAILURE);
 	
 	pinMode(GPIO_PIN, OUTPUT);
 }
 
-void wiringpi_led_on() {
+void
+wiringpi_led_on() {
 	digitalWrite(GPIO_PIN, ON);
 }
 
-void wiringpi_led_off() {
+void
+wiringpi_led_off() {
 	digitalWrite(GPIO_PIN, OFF);
 }
 
-void wiringpi_delay(long t) {
+void 
+wiringpi_delay(long t) {
 	delay(t);
 }
 
-int main(int argc, char* argv[]) {
+void
+led_prog1(int world_rank, int world_size) {
+	int token, c = 0;
+
+    if(world_rank == 0) {
+	    MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+    }
+
+	if (world_rank != 0) {
+		MPI_Recv(&token, 1, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		wiringpi_led_on();		
+		wiringpi_delay(DELAY);
+		wiringpi_led_off();
+		MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+	} else {
+		MPI_Recv(&token, 1, MPI_INT, world_size - 1 , 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		wiringpi_led_on();		
+		wiringpi_delay(DELAY);
+		wiringpi_led_off();
+		MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void
+led_prog2(int world_rank, int world_size) {
+	int token, c = 0;
+    if(world_rank == 0){
+	    MPI_Send(&token, 1, MPI_INT, (world_size - 1) % world_size, 0, MPI_COMM_WORLD);
+    }
+
+	if (world_rank != 0) {
+		MPI_Recv(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		wiringpi_led_on();		
+		wiringpi_delay(DELAY);
+		wiringpi_led_off();
+		MPI_Send(&token, 1, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD);
+	} else {
+		MPI_Recv(&token, 1, MPI_INT, (world_rank + 1) % world_size , 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		wiringpi_led_on();		
+		wiringpi_delay(DELAY);
+		wiringpi_led_off();
+
+		MPI_Send(&token, 1, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+/*
+void
+led_prog3(int world_rank, int world_size) {
+	int token, i;
+	for (i = 1; i < world_size; i++) {
+		MPI_Isend(&token, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+	}
+
+	if (world_rank != 0) {
+		MPI_Recv(&token, 1, MPI_INT, world_rank , 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		wiringpi_led_on();		
+		wiringpi_delay(DELAY);
+		wiringpi_led_off();
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+*/
+
+void
+run(void (*prog)(int, int), int world_rank, int world_size) {
+	int i;
+	for (i = 0; i <= MAX_PROG_C; i++) {
+		prog(world_rank, world_size);	
+	}
+}
+
+int 
+main(int argc, char* argv[]) {
 	wiringpi_init();
 	MPI_Init(&argc, &argv);
 
@@ -38,28 +119,14 @@ int main(int argc, char* argv[]) {
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     printf("%d/%d running\n", world_rank, world_size);
-
-	int token;
-    if(world_rank == 0){
-		MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
-    }
-
-    while(TRUE){
-        if (world_rank != 0) {
-            MPI_Recv(&token, 1, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            wiringpi_led_on();		
-            wiringpi_delay(DELAY);
-            wiringpi_led_off();
-			MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
-        } else {
-            MPI_Recv(&token, 1, MPI_INT, world_size-1 , 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            wiringpi_led_on();		
-            wiringpi_delay(DELAY);
-            wiringpi_led_off();
-			MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
-        }
-    }
 	
+	run(led_prog1, world_rank, world_size);	
+	run(led_prog2, world_rank, world_size);	
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	wiringpi_led_off();
 	MPI_Finalize();
+
+	return EXIT_SUCCESS;
 }
 
