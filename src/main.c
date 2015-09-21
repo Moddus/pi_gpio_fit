@@ -10,6 +10,7 @@
 #define OFF FALSE
 #define DELAY 250
 #define MAX_PROG_C 10
+#define MASTER 0
 
 void
 wiringpi_init()
