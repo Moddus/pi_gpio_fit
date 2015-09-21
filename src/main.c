@@ -100,13 +100,8 @@ void
 led_all(int world_rank, int world_size)
 {
     int token, c = 0;
-
-    if (world_rank == MASTER)
-    {
-        MPI_Send(&token, 1, MPI_INT, MASTER, PI_COMM_WORLD);
-    }
-    else
-    {
+    MPI_Bcast(&token, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    if (world_rank != MASTER){
         MPI_Recv(&token, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         wiringpi_led_on();
         wiringpi_delay(DELAY);
