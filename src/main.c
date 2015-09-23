@@ -100,7 +100,7 @@ led_prog2(int world_rank, int world_size)
 void
 led_all(int world_rank, int world_size)
 {
-    int token, c = 0;
+    int token;
     MPI_Bcast(&token, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
     if (world_rank != MASTER){
         wiringpi_led_on();
@@ -131,8 +131,12 @@ main(int argc, char* argv[])
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     printf("%d/%d running\n", world_rank, world_size);
-
-    run(led_all, world_rank, world_size);
+	
+	while (TRUE) {
+		run(led_prog1, world_rank, world_size);
+		run(led_prog2, world_rank, world_size);
+		run(led_all, world_rank, world_size);
+	}
 
     MPI_Barrier(MPI_COMM_WORLD);
     wiringpi_led_off();
