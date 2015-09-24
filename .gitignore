@@ -57,3 +57,8 @@ install_manifest.txt
 
 *.swp
 
+#
+# YCM
+#
+
+.ycm_extra_conf.pyc
