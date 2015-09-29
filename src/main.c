@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#include "libs/wiringPi/wiringPi/wiringPi.h"
+#include "../libs/wiringPi/wiringPi/wiringPi.h"
 
 #define GPIO_PIN 29 /* Pin 40 / GPIO 21 */
 #define TRUE 1
